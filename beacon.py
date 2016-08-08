@@ -17,9 +17,9 @@ es.indices.put_template(name="codl_beacon",
         "mappings": {
             "beacon": {
                 "properties": {
-                    "timestamp": {
-                        "type": "date"
-                    }
+                    "timestamp": { "type": "date" },
+                    "path": { "type": "string", "index": "not_analyzed" },
+                    "method": { "type": "string", "index": "not_analyzed" },
                 }
             }
         }
