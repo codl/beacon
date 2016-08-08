@@ -1,11 +1,12 @@
 from flask import Flask, request, send_file
+from flask_cors import CORS
 from os import getenv
 from elasticsearch import Elasticsearch
 import json
 import time, datetime
 
-
 app = Flask("beacon")
+CORS(app)
 
 es = Elasticsearch([getenv("BEACON_ELASTICSEARCH", "localhost:9200")])
 INDEX_PREFIX = getenv("BEACON_PREFIX", "beacon-")
