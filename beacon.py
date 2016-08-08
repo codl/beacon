@@ -45,11 +45,9 @@ def recieve_beacon(path=""):
     }
     params = list(request.values.items())
     if len(params) > 0:
-        event["params"] = dict(params)
+        event["body"] = dict(params)
     if request.json:
         event["body"] = request.json
-    else:
-        event["body_raw"] = request.get_data()
 
     index_name = INDEX_PREFIX + datetime.date.today().isoformat()
     es.index(index=index_name, doc_type="beacon", body=json.dumps(event, cls=BytesEncoder))
