@@ -21,7 +21,23 @@ es.indices.put_template(name="codl_beacon",
                     "timestamp": { "type": "date" },
                     "path": { "type": "string", "index": "not_analyzed" },
                     "method": { "type": "string", "index": "not_analyzed" },
-                }
+                },
+                "dynamic_templates": [
+                    {
+                        "strings": {
+                            "match_mapping_type": "string",
+                            "mapping": {
+                                "type": "string",
+                                "fields": {
+                                    "raw": {
+                                        "type": "string",
+                                        "index": "not_analyzed"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                ]
             }
         }
     })
