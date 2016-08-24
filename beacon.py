@@ -77,13 +77,19 @@ def recieve_beacon(path=""):
         event["body"] = request.json
 
     index_name = INDEX_PREFIX + datetime.date.today().isoformat()
-    es.index(index=index_name, doc_type="beacon", body=json.dumps(event, cls=BytesEncoder))
+
+    failed = False
+    try:
+        es.index(index=index_name, doc_type="beacon", body=json.dumps(event, cls=BytesEncoder))
+    except Exception:
+        logging.error("Couldn't insert into Elasticsearch")
+        failed = True
 
     if(request.method == "GET"):
         return send_file("pixel.png", mimetype="image/png",
-            add_etags=False, cache_timeout=0)
+            add_etags=False, cache_timeout=0), 500 if failed else 200
     else:
-        return "", 204
+        return "", 500 if failed else 204
 
 if __name__ == "__main__":
     app.run()
