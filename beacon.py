@@ -23,7 +23,7 @@ INDEX_PREFIX = getenv("BEACON_PREFIX", "beacon-")
 
 es.indices.put_template(name="codl_beacon",
     body={
-        "template": "beacon-*",
+        "template": "%s*" % (INDEX_PREFIX,),
         "order": 10,
         "mappings": {
             "beacon": {
