@@ -1,3 +1,4 @@
+import logging
 from flask import Flask, request, send_file
 from flask_cors import CORS
 from os import getenv
@@ -5,10 +6,19 @@ from elasticsearch import Elasticsearch
 import json
 import time, datetime
 
+logging.getLogger("elasticsearch").setLevel(logging.ERROR)
+
 app = Flask("beacon")
 CORS(app)
 
-es = Elasticsearch([getenv("BEACON_ELASTICSEARCH", "localhost:9200")])
+
+try:
+    es = Elasticsearch([getenv("BEACON_ELASTICSEARCH", "localhost:9200")])
+    es.info()
+except Exception as e:
+    logging.critical("Couldn't connect to Elasticsearch: %s", e)
+    exit(1)
+
 INDEX_PREFIX = getenv("BEACON_PREFIX", "beacon-")
 
 es.indices.put_template(name="codl_beacon",
