@@ -5,7 +5,7 @@ from os import getenv
 from elasticsearch import Elasticsearch
 import json
 import time, datetime
-import random
+from util import genid
 
 logging.getLogger("elasticsearch").setLevel(logging.ERROR)
 
@@ -77,20 +77,6 @@ def recieve_beacon(path=""):
     else:
         resp.set_cookie('uid', uid)
     return resp
-
-def genid(length = 8):
-    """
-    Generates a random unique ID of specified length
-
-    >>> import random
-    >>> random.seed(0)
-    >>> genid()
-    'UoNWq.fw'
-    >>> genid(16)
-    'vpYQTiumBXYcw7h7'
-    """
-    ALLOWED_CHARS="-_.23456789abcdefghijkmnopqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ"
-    return ''.join([random.choice(ALLOWED_CHARS) for _ in range(length)])
 
 def register_template():
     try:
