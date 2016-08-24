@@ -75,7 +75,8 @@ def recieve_beacon(path=""):
     if dnt:
         resp.set_cookie('uid', expires=0)
     else:
-        resp.set_cookie('uid', uid)
+        secure = not getenv("BEACON_INSECURE")
+        resp.set_cookie('uid', uid, httponly=True, secure=secure)
     return resp
 
 def register_template():
