@@ -14,41 +14,7 @@ CORS(app)
 
 INDEX_PREFIX = getenv("BEACON_PREFIX", "beacon-")
 
-try:
-    es = Elasticsearch([getenv("BEACON_ELASTICSEARCH", "localhost:9200")])
-    es.indices.put_template(name="codl_beacon",
-        body={
-            "template": "%s*" % (INDEX_PREFIX,),
-            "order": 10,
-            "mappings": {
-                "beacon": {
-                    "properties": {
-                        "timestamp": { "type": "date" },
-                        "path": { "type": "string", "index": "not_analyzed" },
-                        "method": { "type": "string", "index": "not_analyzed" },
-                    },
-                    "dynamic_templates": [
-                        {
-                            "strings": {
-                                "match_mapping_type": "string",
-                                "mapping": {
-                                    "type": "string",
-                                    "fields": {
-                                        "raw": {
-                                            "type": "string",
-                                            "index": "not_analyzed"
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    ]
-                }
-            }
-        })
-except Exception as e:
-    logging.critical("Couldn't connect to Elasticsearch: %s", e)
-    exit(1)
+es = Elasticsearch([getenv("BEACON_ELASTICSEARCH", "localhost:9200")])
 
 class BytesEncoder(json.JSONEncoder):
     def default(self, obj):
@@ -125,6 +91,43 @@ def genid(length = 8):
     """
     ALLOWED_CHARS="-_.23456789abcdefghijkmnopqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ"
     return ''.join([random.choice(ALLOWED_CHARS) for _ in range(length)])
+
+def register_template():
+    try:
+        es.indices.put_template(name="codl_beacon",
+            body={
+                "template": "%s*" % (INDEX_PREFIX,),
+                "order": 10,
+                "mappings": {
+                    "beacon": {
+                        "properties": {
+                            "timestamp": { "type": "date" },
+                            "path": { "type": "string", "index": "not_analyzed" },
+                            "method": { "type": "string", "index": "not_analyzed" },
+                        },
+                        "dynamic_templates": [
+                            {
+                                "strings": {
+                                    "match_mapping_type": "string",
+                                    "mapping": {
+                                        "type": "string",
+                                        "fields": {
+                                            "raw": {
+                                                "type": "string",
+                                                "index": "not_analyzed"
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        ]
+                    }
+                }
+            })
+    except Exception as e:
+        logging.critical("Couldn't connect to Elasticsearch: %s", e)
+
+app.before_first_request(register_template)
 
 if __name__ == "__main__":
     app.run()
