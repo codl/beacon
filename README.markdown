@@ -28,5 +28,5 @@ GET requests return a 1x1px transparent png so you can insert it as an image in 
 you can also run it in your favourite wsgi server
 
 ```
-BEACON_ELASTICSEARCH="…" gunicorn beacon.app
+$ BEACON_ELASTICSEARCH="…" gunicorn beacon.app
 ```
