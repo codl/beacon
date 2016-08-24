@@ -59,6 +59,11 @@ class BytesEncoder(json.JSONEncoder):
 @app.route("/favicon.ico")
 def favicon():
     return "no", 404
+
+@app.route("/robots.txt")
+def robots():
+    return "", 204
+
 @app.route("/", methods={"GET", "POST"})
 @app.route("/<path:path>", methods={"GET", "POST"})
 def recieve_beacon(path=""):
