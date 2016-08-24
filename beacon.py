@@ -1,10 +1,11 @@
 import logging
-from flask import Flask, request, send_file
+from flask import Flask, request, send_file, make_response
 from flask_cors import CORS
 from os import getenv
 from elasticsearch import Elasticsearch
 import json
 import time, datetime
+import random
 
 logging.getLogger("elasticsearch").setLevel(logging.ERROR)
 
@@ -81,6 +82,14 @@ def recieve_beacon(path=""):
     if request.json:
         event["body"] = request.json
 
+    dnt = request.headers.get("DNT") == "1"
+
+    if not dnt:
+        uid = request.cookies.get('uid')
+        if not uid:
+            uid = genid(8)
+        event["uid"] = uid
+
     index_name = INDEX_PREFIX + datetime.date.today().isoformat()
 
     failed = False
@@ -91,10 +100,31 @@ def recieve_beacon(path=""):
         failed = True
 
     if(request.method == "GET"):
-        return send_file("pixel.png", mimetype="image/png",
-            add_etags=False, cache_timeout=0), 500 if failed else 200
+        resp = make_response(send_file("pixel.png", mimetype="image/png",
+            add_etags=False, cache_timeout=0),
+            500 if failed else 200)
     else:
-        return "", 500 if failed else 204
+        resp = make_response("", 500 if failed else 204)
+
+    if dnt:
+        resp.set_cookie('uid', expires=0)
+    else:
+        resp.set_cookie('uid', uid)
+    return resp
+
+def genid(length = 8):
+    """
+    Generates a random unique ID of specified length
+
+    >>> import random
+    >>> random.seed(0)
+    >>> genid()
+    'UoNWq.fw'
+    >>> genid(16)
+    'vpYQTiumBXYcw7h7'
+    """
+    ALLOWED_CHARS="-_.23456789abcdefghijkmnopqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ"
+    return ''.join([random.choice(ALLOWED_CHARS) for _ in range(length)])
 
 if __name__ == "__main__":
     app.run()
