@@ -9,14 +9,14 @@ replace my use of logstash
 
 ```
 $ pip install -r requirements.txt
-$ BEACON_ELASTICSEARCH="127.0.0.1:9200" BEACON_PREFIX="beacon-" python beacon.py
+$ env BEACON_ELASTICSEARCH="127.0.0.1:9200" BEACON_PREFIX="beacon-" python beacon.py
 * Running on http://127.0.0.1:5000/ (Press CTRL+C to quit)
 ```
 
-you can also run it in your favourite wsgi server
+you can and should also run it in your favourite wsgi server
 
 ```
-$ BEACON_ELASTICSEARCH="…" gunicorn beacon:app
+$ env BEACON_ELASTICSEARCH="…" gunicorn beacon:app
 ```
 
 ### env vars
