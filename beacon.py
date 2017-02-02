@@ -1,5 +1,5 @@
 import logging
-from flask import Flask, request, send_file, make_response
+from flask import Flask, request, send_file, make_response, render_template
 from flask_cors import CORS
 from os import getenv
 from elasticsearch import Elasticsearch
