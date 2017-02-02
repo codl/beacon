@@ -35,6 +35,11 @@ def robots():
 def index():
     return render_template("index.html")
 
+@app.route("/s")
+def script():
+    return send_file("script.js")
+
+
 @app.route("/<path:path>", methods={"GET", "POST"})
 def recieve_beacon(path=""):
     event = {
