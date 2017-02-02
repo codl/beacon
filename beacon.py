@@ -14,7 +14,7 @@ CORS(app)
 
 INDEX_PREFIX = getenv("BEACON_PREFIX", "beacon-")
 
-es = Elasticsearch([getenv("BEACON_ELASTICSEARCH", "localhost:9200")])
+es = Elasticsearch(getenv("BEACON_ELASTICSEARCH", "localhost:9200").split(","))
 
 class BytesEncoder(json.JSONEncoder):
     def default(self, obj):
