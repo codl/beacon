@@ -7,7 +7,7 @@ window.Beacon = (function(){
     }
 
     let Beacon = function(path, data){
-        path = "https://beacon.codl.fr/test" + path;
+        path = "https://beacon.codl.fr" + path;
         let xhr = new XMLHttpRequest();
         xhr.open("POST", path);
         xhr.setRequestHeader("content-type", "application/json");
