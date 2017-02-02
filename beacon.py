@@ -31,7 +31,10 @@ def favicon():
 def robots():
     return "", 204
 
-@app.route("/", methods={"GET", "POST"})
+@app.route("/")
+def index():
+    return render_template("index.html")
+
 @app.route("/<path:path>", methods={"GET", "POST"})
 def recieve_beacon(path=""):
     event = {
