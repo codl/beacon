@@ -10,7 +10,7 @@ from util import genid
 logging.getLogger("elasticsearch").setLevel(logging.ERROR)
 
 app = Flask("beacon")
-CORS(app)
+CORS(app, send_wildcard=True, max_age=60*60*24*365)
 
 INDEX_PREFIX = getenv("BEACON_PREFIX", "beacon-")
 
