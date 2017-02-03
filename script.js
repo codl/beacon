@@ -51,7 +51,7 @@ window.Beacon = (function(){
             perf();
         }
         else{
-            document.addEventListener("load", perf);
+            window.addEventListener("load", perf);
         }
     }
 
