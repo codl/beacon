@@ -3,6 +3,9 @@ window.Beacon = (function(){
     let beacon_script = document.currentScript;
 
     function flag(f){
+        if(!beacon_script || !beacon_script.dataset){
+            return true;
+        }
         return typeof beacon_script.dataset[f] == "string";
     }
 
@@ -26,6 +29,30 @@ window.Beacon = (function(){
 
     if(!flag("no-visit")){
         Beacon("/visit/" + window.location.hostname, {});
+    }
+
+    function perf(){
+        let data = {}
+        let t = performance.timing;
+        data.dns = t.domainLookupEnd - t.domainLookupStart;
+        data.connect = t.connectEnd - t.connectStart;
+        data.firstByte = t.responseStart - t.requestStart;
+        data.transfer = t.responseEnd - t.responseStart;
+        data.parse = t.domInteractive - t.domLoading;
+        data.load = t.domComplete - t.domInteractive;
+        data.domContentLoadedHandlers = t.domContentLoadedEventEnd - t.domContentLoadedEventStart;
+        data.loadHandlers = t.loadEventEnd - t.loadEventStart;
+
+        Beacon("/perf/" + window.location.hostname, {timing: data});
+    }
+
+    if(!flag("no-perf") && window.performance && performance.timing){
+        if(document.readyState == "complete"){
+            perf();
+        }
+        else{
+            document.addEventListener("load", perf);
+        }
     }
 
     return Beacon;
