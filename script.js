@@ -14,6 +14,7 @@ window.Beacon = (function(){
         let xhr = new XMLHttpRequest();
         xhr.open("POST", path);
         xhr.setRequestHeader("content-type", "application/json");
+        xhr.withCredentials = true;
         xhr.send(JSON.stringify(data));
     }
 
