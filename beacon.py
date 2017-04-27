@@ -53,8 +53,8 @@ def recieve_beacon(path=""):
     params = list(request.values.items())
     if len(params) > 0:
         event["body"] = dict(params)
-    if request.json:
-        event["body"] = request.json
+    if request.is_json or request.content_type == "application/csp_report":
+        event["body"] = request.get_json(force = True);
 
     dnt = request.headers.get("DNT") == "1"
 
