@@ -28,11 +28,25 @@ window.Beacon = (function(){
         });
     }
 
-    if(!flag("no-visit")){
-        Beacon("/visit/" + window.location.hostname, {});
+    function send_visit(){
+        let data = {};
+        Beacon("/visit/" + window.location.hostname, {
+            visit: {
+                href: window.location.href,
+                href_nohash: window.location.href.split('#')[0],
+                hostname: window.location.hostname,
+                protocol: window.location.protocol,
+                pathname: window.location.pathname,
+            },
+            perf: perf()
+        });
     }
 
     function perf(){
+        if(!(window.performance && performance.timing)){
+            return {};
+        }
+
         let data = {}
         let t = performance.timing;
         data.dns = t.domainLookupEnd - t.domainLookupStart;
@@ -44,18 +58,16 @@ window.Beacon = (function(){
         data.domContentLoadedHandlers = t.domContentLoadedEventEnd - t.domContentLoadedEventStart;
         data.loadHandlers = t.loadEventEnd - t.loadEventStart;
 
-        Beacon("/perf/" + window.location.hostname, {timing: data});
+        return data;
     }
 
-    if(!flag("no-perf") && window.performance && performance.timing){
-        if(document.readyState == "complete"){
-            perf();
-        }
-        else{
-            window.addEventListener("load", function(){
-                setTimeout(perf, 0);
-            });
-        }
+    if(document.readyState == "complete"){
+        send_visit();
+    }
+    else{
+        window.addEventListener("load", function(){
+            setTimeout(send_visit, 0);
+        });
     }
 
     return Beacon;
