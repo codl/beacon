@@ -65,7 +65,7 @@ def setup_db():
         CREATE TABLE IF NOT EXISTS beacons (
             id serial PRIMARY KEY,
             created_at timestamp with time zone,
-            type string,
+            type text,
             body jsonb
         );
         CREATE INDEX IF NOT EXISTS idx_beacons_created_at ON beacons (created_at);
