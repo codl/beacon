@@ -1,12 +1,11 @@
-click==6.6
-elasticsearch==2.3.0
-elasticsearch-dsl==2.1.0
-Flask==0.11.1
-Flask-Cors==2.1.2
+-i https://pypi.org/simple
+click==6.7
+flask-cors==3.0.6
+flask==1.0.2
 itsdangerous==0.24
-Jinja2==2.8
-MarkupSafe==0.23
-python-dateutil==2.5.3
-six==1.10.0
-urllib3==1.16
-Werkzeug==0.11.10
+jinja2==2.10
+markupsafe==1.0
+psycopg2==2.7.5
+python-dateutil==2.7.3
+six==1.11.0
+werkzeug==0.14.1

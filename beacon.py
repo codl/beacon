@@ -1,27 +1,12 @@
-import logging
 from flask import Flask, request, send_file, make_response, render_template
 from flask_cors import CORS
 from os import getenv
-from elasticsearch import Elasticsearch
-import json
-import time, datetime
-from util import genid
-
-logging.getLogger("elasticsearch").setLevel(logging.ERROR)
+import psycopg2
 
 app = Flask("beacon")
 CORS(app, max_age=60*60*24*365, supports_credentials=True)
 
-INDEX_PREFIX = getenv("BEACON_PREFIX", "beacon-")
-
-es = Elasticsearch(getenv("BEACON_ELASTICSEARCH", "localhost:9200").split(","))
-
-class BytesEncoder(json.JSONEncoder):
-    def default(self, obj):
-        if isinstance(obj, bytes):
-            return obj.decode()
-
-        return json.JSONEncoder.default(self, obj)
+pg = psycopg2.connect(getenv("BEACON_POSTGRESQL", ""))
 
 @app.route("/favicon.ico")
 def favicon():
@@ -40,7 +25,7 @@ def script():
     return send_file("script.js")
 
 
-@app.route("/<path:path>", methods={"GET", "POST"})
+@app.route("/collect/<path:path>", methods={"GET", "POST"})
 def recieve_beacon(path=""):
     event = {
         "timestamp": int(time.time()*1000), #es requires milliseconds
@@ -50,79 +35,46 @@ def recieve_beacon(path=""):
         "headers": dict(request.headers),
         "headers_raw": ["%s: %s" % header for header in request.headers]
     }
+
     params = list(request.values.items())
     if len(params) > 0:
-        event["body"] = dict(params)
-    if request.is_json or request.content_type == "application/csp_report":
-        event["body"] = request.get_json(force = True);
+        body = dict(params)
+    elif request.is_json or request.content_type == "application/csp_report":
+        body = request.get_json(force = True);
 
-    dnt = request.headers.get("DNT") == "1"
+    cur = pg.cursor()
 
-    if not dnt:
-        uid = request.cookies.get('uid')
-        if not uid:
-            uid = genid(8)
-        event["uid"] = uid
-
-    index_name = INDEX_PREFIX + datetime.date.today().isoformat()
-
-    failed = False
-    try:
-        es.index(index=index_name, doc_type="beacon", body=json.dumps(event, cls=BytesEncoder))
-    except Exception:
-        logging.error("Couldn't insert into Elasticsearch")
-        failed = True
+    cur.execute("""
+        INSERT INTO beacons (created_at, type, body)
+        VALUES (now(), %s, %s);
+    """, (path, body))
+    pg.commit()
 
     if(request.method == "GET"):
         resp = make_response(send_file("pixel.png", mimetype="image/png",
             add_etags=False, cache_timeout=0),
-            500 if failed else 200)
+            200)
     else:
-        resp = make_response("", 500 if failed else 204)
+        resp = make_response("", 204)
 
-    if dnt:
-        resp.set_cookie('uid', expires=0)
-    else:
-        secure = not getenv("BEACON_INSECURE")
-        resp.set_cookie('uid', uid, httponly=True, secure=secure)
     return resp
 
-def register_template():
-    try:
-        es.indices.put_template(name="codl_beacon",
-            body={
-                "template": "%s*" % (INDEX_PREFIX,),
-                "order": 10,
-                "mappings": {
-                    "beacon": {
-                        "properties": {
-                            "timestamp": { "type": "date" },
-                            "path": { "type": "string", "index": "not_analyzed" },
-                            "method": { "type": "string", "index": "not_analyzed" },
-                        },
-                        "dynamic_templates": [
-                            {
-                                "strings": {
-                                    "match_mapping_type": "string",
-                                    "mapping": {
-                                        "type": "string",
-                                        "fields": {
-                                            "raw": {
-                                                "type": "string",
-                                                "index": "not_analyzed"
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        ]
-                    }
-                }
-            })
-    except Exception as e:
-        logging.critical("Couldn't connect to Elasticsearch: %s", e)
+def setup_db():
+    cur = pg.cursor()
+    cur.execute('''
+        CREATE TABLE IF NOT EXISTS beacons (
+            id serial PRIMARY KEY,
+            created_at timestamp with time zone,
+            type string,
+            body jsonb
+        );
+        CREATE INDEX IF NOT EXISTS idx_beacons_created_at ON beacons (created_at);
+        CREATE INDEX IF NOT EXISTS idx_beacons_type_created_at ON beacons (type, created_at);
+        ''')
+    pg.commit()
 
-app.before_first_request(register_template)
+
+app.before_first_request(setup_db)
 
 if __name__ == "__main__":
     app.run()
