@@ -53,8 +53,9 @@ def recieve_beacon(path=""):
             ON CONFLICT DO UPDATE SET body = %(body)s;
         """, dict(created_at=created_at, type=path, body=body))
         pg.commit()
-    except Exception:
-        pg.revert()
+    except Exception as e:
+        pg.rollback()
+        raise e
         success = False
 
     if(request.method == "GET"):
