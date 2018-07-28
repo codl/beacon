@@ -36,10 +36,10 @@ def recieve_beacon(path=""):
     elif request.is_json or request.content_type == "application/csp_report":
         body = request.get_json(force = True);
 
-    created_at = time.time()
-    if 'created_at' in body:
-        created_at = body['created_at']
-        del body['created_at']
+    collected_at = time.time()
+    if 'collected_at' in body:
+        collected_at = body['collected_at']
+        del body['collected_at']
 
     body = json.dumps(body)
 
@@ -48,10 +48,10 @@ def recieve_beacon(path=""):
     success = True
     try:
         cur.execute("""
-            INSERT INTO beacons (created_at, type, body)
-            VALUES (to_timestamp(%(created_at)s), %(type)s, %(body)s)
-            ON CONFLICT (type, created_at, body) DO UPDATE SET count = beacons.count + 1;
-        """, dict(created_at=created_at, type=path, body=body))
+            INSERT INTO beacons (collected_at, type, body)
+            VALUES (to_timestamp(%(collected_at)s), %(type)s, %(body)s)
+            ON CONFLICT (type, collected_at, body) DO UPDATE SET count = beacons.count + 1;
+        """, dict(collected_at=collected_at, type=path, body=body))
         pg.commit()
     except Exception as e:
         pg.rollback()
@@ -72,14 +72,14 @@ def setup_db():
     cur.execute('''
         CREATE TABLE IF NOT EXISTS beacons (
             id serial PRIMARY KEY,
-            created_at timestamp without time zone,
+            collected_at timestamp without time zone,
             type text,
             body jsonb,
             count integer DEFAULT 1,
-            UNIQUE (type, created_at, body)
+            UNIQUE (type, collected_at, body)
         );
-        CREATE INDEX IF NOT EXISTS idx_beacons_created_at ON beacons (created_at);
-        CREATE INDEX IF NOT EXISTS idx_beacons_type_created_at ON beacons (type, created_at);
+        CREATE INDEX IF NOT EXISTS idx_beacons_collected_at ON beacons (collected_at);
+        CREATE INDEX IF NOT EXISTS idx_beacons_type_collected_at ON beacons (type, collected_at);
         ''')
     pg.commit()
 
