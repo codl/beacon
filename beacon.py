@@ -50,7 +50,7 @@ def recieve_beacon(path=""):
         cur.execute("""
             INSERT INTO beacons (created_at, type, body)
             VALUES (to_timestamp(%(created_at)s), %(type)s, %(body)s)
-            ON CONFLICT (type, created_at) DO UPDATE SET body = %(body)s;
+            ON CONFLICT (type, created_at, body) DO UPDATE SET count = count + 1;
         """, dict(created_at=created_at, type=path, body=body))
         pg.commit()
     except Exception as e:
@@ -75,7 +75,8 @@ def setup_db():
             created_at timestamp without time zone,
             type text,
             body jsonb,
-            UNIQUE (type, created_at)
+            count integer DEFAULT 1,
+            UNIQUE (type, created_at, body)
         );
         CREATE INDEX IF NOT EXISTS idx_beacons_created_at ON beacons (created_at);
         CREATE INDEX IF NOT EXISTS idx_beacons_type_created_at ON beacons (type, created_at);
