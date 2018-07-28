@@ -69,7 +69,7 @@ def setup_db():
             created_at timestamp without time zone,
             type text,
             body jsonb,
-            UNIQUE (type, created_at),
+            UNIQUE (type, created_at)
         );
         CREATE INDEX IF NOT EXISTS idx_beacons_created_at ON beacons (created_at);
         CREATE INDEX IF NOT EXISTS idx_beacons_type_created_at ON beacons (type, created_at);
