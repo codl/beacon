@@ -2,6 +2,7 @@ from flask import Flask, request, send_file, make_response, render_template
 from flask_cors import CORS
 from os import getenv
 import psycopg2
+import json
 
 app = Flask("beacon")
 CORS(app, max_age=60*60*24*365, supports_credentials=True)
@@ -33,6 +34,8 @@ def recieve_beacon(path=""):
         body = dict(params)
     elif request.is_json or request.content_type == "application/csp_report":
         body = request.get_json(force = True);
+
+    body = json.dumps(body)
 
     cur = pg.cursor()
 
