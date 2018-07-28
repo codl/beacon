@@ -6,7 +6,7 @@ import psycopg2
 app = Flask("beacon")
 CORS(app, max_age=60*60*24*365, supports_credentials=True)
 
-pg = psycopg2.connect(getenv("BEACON_POSTGRESQL", ""))
+pg = psycopg2.connect(getenv("BEACON_POSTGRESQL", ""), application_name="beacon")
 
 @app.route("/favicon.ico")
 def favicon():
@@ -27,14 +27,6 @@ def script():
 
 @app.route("/collect/<path:path>", methods={"GET", "POST"})
 def recieve_beacon(path=""):
-    event = {
-        "timestamp": int(time.time()*1000), #es requires milliseconds
-        "method": request.method,
-        "path": request.path,
-        "client": request.remote_addr,
-        "headers": dict(request.headers),
-        "headers_raw": ["%s: %s" % header for header in request.headers]
-    }
 
     params = list(request.values.items())
     if len(params) > 0:
