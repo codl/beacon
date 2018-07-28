@@ -50,7 +50,7 @@ def recieve_beacon(path=""):
         cur.execute("""
             INSERT INTO beacons (created_at, type, body)
             VALUES (to_timestamp(%(created_at)s), %(type)s, %(body)s)
-            ON CONFLICT (type, created_at, body) DO UPDATE SET count = count + 1;
+            ON CONFLICT (type, created_at, body) DO UPDATE SET count = beacons.count + 1;
         """, dict(created_at=created_at, type=path, body=body))
         pg.commit()
     except Exception as e:
