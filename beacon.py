@@ -45,19 +45,24 @@ def recieve_beacon(path=""):
 
     cur = pg.cursor()
 
-    cur.execute("""
-        INSERT INTO beacons (created_at, type, body)
-        VALUES (%(created_at)s, %(type)s, %(body)s)
-        ON CONFLICT DO UPDATE SET body = %(body)s;
-    """, dict(created_at=created_at, type=path, body=body))
-    pg.commit()
+    success = True
+    try:
+        cur.execute("""
+            INSERT INTO beacons (created_at, type, body)
+            VALUES (%(created_at)s::timestamp, %(type)s, %(body)s)
+            ON CONFLICT DO UPDATE SET body = %(body)s;
+        """, dict(created_at=created_at, type=path, body=body))
+        pg.commit()
+    except Exception:
+        pg.revert()
+        success = False
 
     if(request.method == "GET"):
         resp = make_response(send_file("pixel.png", mimetype="image/png",
             add_etags=False, cache_timeout=0),
-            200)
+            200 if success else 500)
     else:
-        resp = make_response("", 204)
+        resp = make_response("", 204 if success else 500)
 
     return resp
 
