@@ -3,6 +3,7 @@ from flask_cors import CORS
 from os import getenv
 import psycopg2
 import json
+import time
 
 app = Flask("beacon")
 CORS(app, max_age=60*60*24*365, supports_credentials=True)
@@ -35,14 +36,20 @@ def recieve_beacon(path=""):
     elif request.is_json or request.content_type == "application/csp_report":
         body = request.get_json(force = True);
 
+    created_at = time.time()
+    if 'created_at' in body:
+        created_at = body['created_at']
+        del body['created_at']
+
     body = json.dumps(body)
 
     cur = pg.cursor()
 
     cur.execute("""
         INSERT INTO beacons (created_at, type, body)
-        VALUES (now(), %s, %s);
-    """, (path, body))
+        VALUES (%(created_at)s, %(type)s, %(body)s)
+        ON CONFLICT DO UPDATE SET body = %(body)s;
+    """, dict(created_at=created_at, type=path, body=body))
     pg.commit()
 
     if(request.method == "GET"):
@@ -59,9 +66,10 @@ def setup_db():
     cur.execute('''
         CREATE TABLE IF NOT EXISTS beacons (
             id serial PRIMARY KEY,
-            created_at timestamp with time zone,
+            created_at timestamp without time zone,
             type text,
-            body jsonb
+            body jsonb,
+            UNIQUE (type, created_at),
         );
         CREATE INDEX IF NOT EXISTS idx_beacons_created_at ON beacons (created_at);
         CREATE INDEX IF NOT EXISTS idx_beacons_type_created_at ON beacons (type, created_at);
