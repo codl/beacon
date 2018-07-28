@@ -49,7 +49,7 @@ def recieve_beacon(path=""):
     try:
         cur.execute("""
             INSERT INTO beacons (created_at, type, body)
-            VALUES (%(created_at)s::timestamp, %(type)s, %(body)s)
+            VALUES (to_timestamp(%(created_at)s), %(type)s, %(body)s)
             ON CONFLICT DO UPDATE SET body = %(body)s;
         """, dict(created_at=created_at, type=path, body=body))
         pg.commit()
