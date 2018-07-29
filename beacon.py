@@ -50,7 +50,7 @@ def recieve_beacon(path=""):
         cur.execute("""
             INSERT INTO beacons (collected_at, type, body)
             VALUES (to_timestamp(%(collected_at)s), %(type)s, %(body)s)
-            ON CONFLICT (type, collected_at, body) DO UPDATE SET count = beacons.count + 1;
+            ON CONFLICT (type, collected_at, body) DO UPDATE SET count = beacons.count + 1, received_at = now();
         """, dict(collected_at=collected_at, type=path, body=body))
         pg.commit()
     except Exception as e:
@@ -72,7 +72,8 @@ def setup_db():
     cur.execute('''
         CREATE TABLE IF NOT EXISTS beacons (
             id serial PRIMARY KEY,
-            collected_at timestamp without time zone,
+            collected_at timestamp without time zone DEFAULT now(),
+            received_at timestamp without time zone DEFAULT now(),
             type text,
             body jsonb,
             count integer DEFAULT 1,
