@@ -9,7 +9,7 @@ import time
 app = Flask("beacon")
 CORS(app, max_age=60*60*24*365, supports_credentials=True)
 
-pgpool = psycopg2.pool.AbstractConnectionPool(0, 1, getenv("BEACON_POSTGRESQL", ""), application_name="beacon")
+pgpool = psycopg2.pool.SimpleConnectionPool(0, 1, getenv("BEACON_POSTGRESQL", ""), application_name="beacon")
 
 @app.route("/favicon.ico")
 def favicon():
