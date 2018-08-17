@@ -2,13 +2,14 @@ from flask import Flask, request, send_file, make_response, render_template
 from flask_cors import CORS
 from os import getenv
 import psycopg2
+import psycopg2.pool
 import json
 import time
 
 app = Flask("beacon")
 CORS(app, max_age=60*60*24*365, supports_credentials=True)
 
-pg = psycopg2.connect(getenv("BEACON_POSTGRESQL", ""), application_name="beacon")
+pgpool = psycopg2.pool.AbstractConnectionPool(0, 1, getenv("BEACON_POSTGRESQL", ""), application_name="beacon")
 
 @app.route("/favicon.ico")
 def favicon():
@@ -43,6 +44,7 @@ def recieve_beacon(path=""):
 
     body = json.dumps(body)
 
+    pg = pgpool.getconn()
     cur = pg.cursor()
 
     success = True
@@ -68,6 +70,7 @@ def recieve_beacon(path=""):
     return resp
 
 def setup_db():
+    pg = pgpool.getconn()
     cur = pg.cursor()
     cur.execute('''
         CREATE TABLE IF NOT EXISTS beacons (
