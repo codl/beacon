@@ -22,15 +22,18 @@ def index():
 
 def is_authed(request, cur):
     authenticated = False
+    purpose = None
 
     auth = request.headers.get('authorization', '')
     if auth.startswith('Bearer '):
         auth = auth[7:]
-        cur.execute('''SELECT FROM auth_tokens WHERE token = %s''', (auth,))
-        if cur.fetchone() is not None:
+        cur.execute('''SELECT purpose FROM auth_tokens WHERE token = %s''', (auth,))
+        row = cur.fetchone()
+        if row is not None:
             authenticated = True
+            purpose = row[0]
 
-    return authenticated
+    return authenticated, purpose
 
 
 @app.route("/collect/<path:path>", methods={"POST",})
@@ -49,17 +52,17 @@ def recieve_beacon(path=""):
     pg = get_pg()
     cur = pg.cursor()
 
-    authenticated = is_authed(request, cur)
+    authenticated, purpose = is_authed(request, cur)
 
     body = json.dumps(body)
 
     success = True
     try:
         cur.execute("""
-            INSERT INTO beacons (collected_at, type, body, authenticated)
-            VALUES (to_timestamp(%(collected_at)s), %(type)s, %(body)s, %(authed)s)
+            INSERT INTO beacons (collected_at, type, body, authenticated, auth_purpose)
+            VALUES (to_timestamp(%(collected_at)s), %(type)s, %(body)s, %(authed)s, %(auth_purpose)s)
             ON CONFLICT (type, collected_at, body, authenticated) DO UPDATE SET count = beacons.count + 1, received_at = now();
-        """, dict(collected_at=collected_at, type=path, body=body, authed=authenticated))
+        """, dict(collected_at=collected_at, type=path, body=body, authed=authenticated, auth_purpose=purpose))
         pg.commit()
     except Exception as e:
         pg.rollback()

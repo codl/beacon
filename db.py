@@ -59,6 +59,19 @@ def setup_db():
         ''')
         version = 1
 
+    if version < 2:
+        cur.execute('''
+            ALTER TABLE auth_tokens
+                ADD COLUMN purpose
+                    TEXT;
+            ALTER TABLE BEACONS
+                ADD COLUMN auth_purpose
+                    TEXT;
+        ''')
+
+
+        version = 2
+
     cur.execute(
         '''
         DELETE FROM db_versions;
