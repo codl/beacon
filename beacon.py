@@ -2,32 +2,38 @@ from flask import Flask, request, send_file, make_response, render_template
 from flask_cors import CORS
 import json
 import time
+from datetime import datetime, timezone
 from db import get_pg
 
 app = Flask("beacon")
-CORS(app, max_age=60*60*24*365, supports_credentials=True)
+CORS(app, max_age=60 * 60 * 24 * 365, supports_credentials=True)
 
 
 @app.route("/favicon.ico")
 def favicon():
     return "no", 404
 
+
 @app.route("/robots.txt")
 def robots():
     return "", 204
+
 
 @app.route("/")
 def index():
     return render_template("index.html")
 
-def is_authed(request, cur):
+
+def authenticate(request, pg):
     authenticated = False
     purpose = None
+    cur = pg.cursor()
 
     auth = request.headers.get('authorization', '')
     if auth.startswith('Bearer '):
         auth = auth[7:]
-        cur.execute('''SELECT purpose FROM auth_tokens WHERE token = %s''', (auth,))
+        cur.execute('''SELECT purpose FROM auth_tokens WHERE token = %s''',
+                    (auth, ))
         row = cur.fetchone()
         if row is not None:
             authenticated = True
@@ -36,42 +42,87 @@ def is_authed(request, cur):
     return authenticated, purpose
 
 
-@app.route("/collect/<path:path>", methods={"POST",})
-def recieve_beacon(path=""):
-    if not (request.is_json or request.content_type == "application/csp_report"):
+def insert_beacons(beacons, authed, purpose, pg):
+    now = datetime.utcnow()
+    cur = pg.cursor()
+    for beacon in beacons:
+        if 'beacon_type' not in beacon:
+            raise Exception('Malformed beacon {}'.format(beacon))
+        type_ = beacon['beacon_type']
+        del beacon['beacon_type']
+
+        collected_at = now
+        if 'collected_at' in beacon:
+            collected_at = datetime.fromtimestamp(
+                beacon['collected_at'], tz=timezone.utc)
+            del beacon['collected_at']
+
+        body = json.dumps(body)
+
+        cur.execute(
+            """
+            INSERT INTO beacons (collected_at, type, body, authenticated, auth_purpose, received_at)
+            VALUES (%(collected_at)s, %(type)s, %(body)s, %(authed)s, %(auth_purpose)s, %(now)s)
+            ON CONFLICT (type, collected_at, body, authenticated) DO UPDATE SET count = beacons.count + 1, received_at = %(now)s;
+        """,
+            dict(
+                collected_at=collected_at,
+                type=type_,
+                body=body,
+                authed=authed,
+                auth_purpose=purpose,
+                now=now))
+
+
+@app.route("/collect", methods=('POST', ))
+@app.route("/collect/", methods=('POST', ))
+def collect():
+    if not request.is_json:
         return "this isn't json", 415
 
-    body = request.get_json(force = True);
+    beacons = request.get_json()
 
-    collected_at = time.time()
-    if 'collected_at' in body:
-        collected_at = body['collected_at']
-        del body['collected_at']
+    if not isinstance(beacons, list):
+        return '400', 400
 
+    pg = get_pg()
+
+    authenticated, purpose = authenticate(request, pg)
+
+    if not authenticated:
+        return '403', 403
+
+    try:
+        insert_beacons(beacons, authenticated, purpose, pg)
+    except Exception as e:
+        return e, 400
+
+    pg.commit()
+
+    return 'OK', 200
+
+
+@app.route("/collect/<path:path>", methods=("POST", ))
+def collect_single(path=""):
+    if not (request.is_json
+            or request.content_type == "application/csp_report"):
+        return "this isn't json", 415
+
+    body = request.get_json(force=True)
+    body['beacon_type'] = path
 
     pg = get_pg()
     cur = pg.cursor()
 
-    authenticated, purpose = is_authed(request, cur)
+    authenticated, purpose = authenticate(request, pg)
 
-    body = json.dumps(body)
-
-    success = True
     try:
-        cur.execute("""
-            INSERT INTO beacons (collected_at, type, body, authenticated, auth_purpose)
-            VALUES (to_timestamp(%(collected_at)s), %(type)s, %(body)s, %(authed)s, %(auth_purpose)s)
-            ON CONFLICT (type, collected_at, body, authenticated) DO UPDATE SET count = beacons.count + 1, received_at = now();
-        """, dict(collected_at=collected_at, type=path, body=body, authed=authenticated, auth_purpose=purpose))
-        pg.commit()
+        insert_beacons([body], authed, purpose, pg)
     except Exception as e:
-        pg.rollback()
-        raise e
-        success = False
+        return e, 400
 
-    resp = make_response("", 204 if success else 500)
+    return 'OK', 200
 
-    return resp
 
 if __name__ == "__main__":
     app.run()
