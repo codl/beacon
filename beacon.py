@@ -2,7 +2,7 @@ from flask import Flask, request, send_file, make_response, render_template
 from flask_cors import CORS
 import json
 import time
-from db import setup_db, get_pg
+from db import get_pg
 
 app = Flask("beacon")
 CORS(app, max_age=60*60*24*365, supports_credentials=True)
