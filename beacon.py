@@ -57,7 +57,7 @@ def insert_beacons(beacons, authed, purpose, pg):
                 beacon['collected_at'], tz=timezone.utc)
             del beacon['collected_at']
 
-        body = json.dumps(body)
+        body = json.dumps(beacon)
 
         cur.execute(
             """
@@ -75,7 +75,6 @@ def insert_beacons(beacons, authed, purpose, pg):
 
 
 @app.route("/collect", methods=('POST', ))
-@app.route("/collect/", methods=('POST', ))
 def collect():
     if not request.is_json:
         return "this isn't json", 415
@@ -95,7 +94,7 @@ def collect():
     try:
         insert_beacons(beacons, authenticated, purpose, pg)
     except Exception as e:
-        return e, 400
+        return str(e), 400
 
     pg.commit()
 
@@ -108,18 +107,19 @@ def collect_single(path=""):
             or request.content_type == "application/csp_report"):
         return "this isn't json", 415
 
-    body = request.get_json(force=True)
-    body['beacon_type'] = path
-
     pg = get_pg()
     cur = pg.cursor()
 
-    authenticated, purpose = authenticate(request, pg)
+    body = request.get_json(force=True)
+    body['beacon_type'] = path
+
+    authed, purpose = authenticate(request, pg)
 
     try:
         insert_beacons([body], authed, purpose, pg)
+        pg.commit()
     except Exception as e:
-        return e, 400
+        return str(e), 400
 
     return 'OK', 200
 
