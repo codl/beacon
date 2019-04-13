@@ -64,7 +64,7 @@ def setup_db():
             ALTER TABLE auth_tokens
                 ADD COLUMN purpose
                     TEXT;
-            ALTER TABLE BEACONS
+            ALTER TABLE beacons
                 ADD COLUMN auth_purpose
                     TEXT;
         ''')
