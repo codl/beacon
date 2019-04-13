@@ -92,6 +92,33 @@ def setup_db():
         ''')
         version = 201903071309
 
+    if version < 201904140038:
+        cur.execute('''
+            CREATE OR REPLACE FUNCTION date_quant(interval, timestamp with time zone)
+                RETURNS timestamp with time zone
+                LANGUAGE 'sql'
+                IMMUTABLE STRICT
+            AS $$
+
+            WITH a AS(
+                SELECT EXTRACT(EPOCH FROM $2)::BIGINT AS ts, EXTRACT(EPOCH FROM $1)::BIGINT AS precision
+            )
+            SELECT to_timestamp(ts - ts % precision) FROM a;
+
+            $$;
+
+            CREATE OR REPLACE FUNCTION date_quant(interval, timestamp without time zone)
+                RETURNS timestamp without time zone
+                LANGUAGE 'sql'
+                IMMUTABLE STRICT
+            AS $$
+
+                SELECT date_quant($1, $2 AT TIME ZONE 'UTC') AT TIME ZONE 'UTC';
+                -- this is silly
+
+            $$;
+        ''')
+        version = 201904140038
 
     cur.execute(
         '''
@@ -100,6 +127,7 @@ def setup_db():
         ''', (version, ))
 
     pg.commit()
+
 
 if __name__ == '__main__':
     setup_db()
