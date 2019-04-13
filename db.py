@@ -81,9 +81,6 @@ def setup_db():
 
         version = 4
 
-    if version < 2019030700:
-        version = 2019030700
-
     if version < 201903071309:
         cur.execute('''
             ALTER TABLE db_versions
@@ -94,7 +91,7 @@ def setup_db():
 
     if version < 201904140038:
         cur.execute('''
-            CREATE OR REPLACE FUNCTION date_quant(interval, timestamp with time zone)
+            CREATE FUNCTION date_quant(interval, timestamp with time zone)
                 RETURNS timestamp with time zone
                 LANGUAGE 'sql'
                 IMMUTABLE STRICT
@@ -107,7 +104,7 @@ def setup_db():
 
             $$;
 
-            CREATE OR REPLACE FUNCTION date_quant(interval, timestamp without time zone)
+            CREATE FUNCTION date_quant(interval, timestamp without time zone)
                 RETURNS timestamp without time zone
                 LANGUAGE 'sql'
                 IMMUTABLE STRICT
