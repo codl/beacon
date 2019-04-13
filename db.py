@@ -72,6 +72,27 @@ def setup_db():
 
         version = 2
 
+    if version < 4:
+        cur.execute('''
+            ALTER TABLE beacons
+                ALTER COLUMN authenticated
+                    DROP NOT NULL;
+        ''')
+
+        version = 4
+
+    if version < 2019030700:
+        version = 2019030700
+
+    if version < 201903071309:
+        cur.execute('''
+            ALTER TABLE db_versions
+                ALTER COLUMN version
+                    TYPE bigint;
+        ''')
+        version = 201903071309
+
+
     cur.execute(
         '''
         DELETE FROM db_versions;
