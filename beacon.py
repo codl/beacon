@@ -108,7 +108,6 @@ def collect_single(path=""):
         return "this isn't json", 415
 
     pg = get_pg()
-    cur = pg.cursor()
 
     body = request.get_json(force=True)
     body['beacon_type'] = path
