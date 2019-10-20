@@ -117,6 +117,18 @@ def setup_db():
         ''')
         version = 201904140038
 
+    if version < 201910210125:
+        cur.execute('''
+        ALTER TABLE beacons
+            ALTER COLUMN collected_at
+                TYPE timestamptz USING collected_at AT TIME ZONE 'UTC';
+
+        ALTER TABLE beacons
+            ALTER COLUMN received_at
+                TYPE timestamptz USING received_at AT TIME ZONE 'UTC';
+    ''')
+        version = 201910210125
+
     cur.execute(
         '''
         DELETE FROM db_versions;

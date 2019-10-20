@@ -43,7 +43,7 @@ def authenticate(request, pg):
 
 
 def insert_beacons(beacons, authed, purpose, pg):
-    now = datetime.utcnow()
+    now = datetime.now(tz=timezone.utc)
     cur = pg.cursor()
     for beacon in beacons:
         if 'beacon_type' not in beacon:
