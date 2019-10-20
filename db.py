@@ -3,7 +3,7 @@ from os import getenv
 
 def get_pg():
     return psycopg2.connect(
-        getenv("BEACON_POSTGRESQL", ""), application_name="beacon")
+        getenv("BEACON_POSTGRESQL", ""), application_name="beacon migrations (db.py)")
 
 
 def setup_db():
