@@ -42,7 +42,7 @@ def authenticate(request, pg):
     return authenticated, purpose
 
 
-def insert_beacons(beacons, authed, purpose, pg):
+def insert_beacons(beacons, authed, purpose, pg, remote_addr=None):
     now = datetime.now(tz=timezone.utc)
     cur = pg.cursor()
     for beacon in beacons:
@@ -57,12 +57,14 @@ def insert_beacons(beacons, authed, purpose, pg):
                 beacon['collected_at'], tz=timezone.utc)
             del beacon['collected_at']
 
+        received_from = remote_addr
+
         body = json.dumps(beacon)
 
         cur.execute(
             """
-            INSERT INTO beacons (collected_at, type, body, authenticated, auth_purpose, received_at)
-            VALUES (%(collected_at)s, %(type)s, %(body)s, %(authed)s, %(auth_purpose)s, %(now)s)
+            INSERT INTO beacons (collected_at, type, body, authenticated, auth_purpose, received_at, received_from)
+            VALUES (%(collected_at)s, %(type)s, %(body)s, %(authed)s, %(auth_purpose)s, %(now)s, %(received_from)s)
             ON CONFLICT (type, collected_at, body, authenticated) DO UPDATE SET count = beacons.count + 1, received_at = %(now)s;
         """,
             dict(
@@ -71,6 +73,7 @@ def insert_beacons(beacons, authed, purpose, pg):
                 body=body,
                 authed=authed,
                 auth_purpose=purpose,
+                received_from=received_from,
                 now=now))
 
 
@@ -92,7 +95,7 @@ def collect():
         return '403', 403
 
     try:
-        insert_beacons(beacons, authenticated, purpose, pg)
+        insert_beacons(beacons, authenticated, purpose, pg, request.remote_addr)
     except Exception as e:
         return str(e), 400
 

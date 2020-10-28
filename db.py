@@ -21,6 +21,7 @@ def setup_db():
                 type text,
                 body jsonb,
                 count integer DEFAULT 1,
+                received_from inet,
                 CONSTRAINT beacons_type_collected_at_body_key UNIQUE (type, collected_at, body)
             );
             CREATE INDEX IF NOT EXISTS idx_beacons_collected_at ON beacons (collected_at);
@@ -128,6 +129,14 @@ def setup_db():
                 TYPE timestamptz USING received_at AT TIME ZONE 'UTC';
     ''')
         version = 201910210125
+
+    if version < 202010280001:
+        cur.execute('''
+        ALTER TABLE beacons
+            ADD COLUMN received_from
+                inet;
+    ''')
+        version = 202010280001
 
     cur.execute(
         '''
