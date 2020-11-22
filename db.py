@@ -1,13 +1,13 @@
 import psycopg2
 from os import getenv
 
-def get_pg():
+def get_pg(application_name="beacon"):
     return psycopg2.connect(
-        getenv("BEACON_POSTGRESQL", ""), application_name="beacon migrations (db.py)")
+        getenv("BEACON_POSTGRESQL", ""), application_name=application_name)
 
 
 def setup_db():
-    pg = get_pg()
+    pg = get_pg(application_name="beacon migrations (db.py)")
     cur = pg.cursor()
     cur.execute('''
         SELECT FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'db_versions';
